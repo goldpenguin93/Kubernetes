@@ -5,10 +5,10 @@
 
 
 
-https://kubernetes.io/ko/docs/tutorials/  <KOR.VER>
+* https://kubernetes.io/ko/docs/tutorials/  <KOR.VER>
 
 
-https://kubernetes.io/docs/tutorials/hello-minikube/ <ENG.VER>
+* https://kubernetes.io/docs/tutorials/hello-minikube/ <ENG.VER>
 
 
 
