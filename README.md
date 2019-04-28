@@ -66,7 +66,7 @@ Turn off swap:
 
 ```
 
-Comment out the following code in the / etc / fstab file:
+* Comment out the following code in the / etc / fstab file:
 
 ```
 
@@ -74,7 +74,7 @@ Comment out the following code in the / etc / fstab file:
 
 ```
 
-Restart the server:
+* Restart the server:
 
 ```
 # reboot
@@ -98,7 +98,7 @@ EOF
 
 ```
 
-Installing kubeadm:
+* Installing kubeadm:
 
 ```
 # yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
@@ -107,7 +107,7 @@ Installing kubeadm:
 ```
 
 4. Installing the master component
-Initialize master node with kubeadm init command
+* Initialize master node with kubeadm init command
 
 Initialize the master node using the kubeadm init command. The --pod-network-cidr option fits the CNI (Container Network Interface) to  be used.
 
@@ -140,7 +140,7 @@ as root:
 ```
 
 
-Setting Environment Variables
+* Setting Environment Variables
 
 If you run kubectl using the root account, set the following environment variables.
 
