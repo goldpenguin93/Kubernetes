@@ -16,6 +16,236 @@
 
 Kubernetes (commonly stylized as K8s is an open-source container-orchestration system for automating deployment, scaling and management of containerized applicationsIt was originally designed by Google and is now maintained by the Cloud Native Computing Foundation. It aims to provide a "platform for automating deployment, scaling, and operations of application containers across clusters of hosts".It works with a range of container tools, including Docker, since its first release
 
+<h2>Installation</h2>
+ 
+ 
+1. Install the docker on the entire server.
+
+```
+
+# yum install -y yum-utils device-mapper-persistent-data lvm2
+# yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+# yum install docker-ce
+# systemctl start docker && systemctl enable docker
+
+```
+
+2. Preparing to install kubeadm.
+
+* Change SELinux settings to permissive mode.
+
+```
+# setenforce 0
+# sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+```
+
+* Iptable settings.
+
+```
+# cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+$ sysctl --system
+
+```
+* Disable firewalld.
+
+```
+# systemctl stop firewalld
+# systemctl disable firewalld
+
+```
+* Swap off
+
+Turn off swap:
+
+```
+# swapoff -a
+
+```
+
+Comment out the following code in the / etc / fstab file:
+
+```
+
+#/dev/mapper/centos-swap swap                    swap    defaults        0 0
+
+```
+
+Restart the server:
+
+```
+# reboot
+
+```
+
+3. Preparing for cooking
+Cubanetis YUM Repository Settings:
+
+```
+# cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kube*
+EOF
+
+```
+
+Installing kubeadm:
+
+```
+# yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+# systemctl enable kubelet && systemctl start kubelet
+
+```
+
+4. Installing the master component
+Initialize master node with kubeadm init command
+
+Initialize the master node using the kubeadm init command. The --pod-network-cidr option fits the CNI (Container Network Interface) to be used.
+
+```
+
+# kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=172.16.1.100
+
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes master has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+  
+You can now join any number of machines by running the following on each node
+as root:
+
+
+  kubeadm join 172.16.1.100:6443 --token yrc47a.55b25p2dhe14pzd1 --discovery-token-ca-cert-hash sha256:2a7a31510b9a0b0da1cf71c2c29627b40711cdd84be12944a713ce2af2d5d148
+
+```
+
+
+Setting Environment Variables
+
+If you run kubectl using the root account, set the following environment variables.
+
+```
+
+# export KUBECONFIG=/etc/kubernetes/admin.conf
+
+```
+
+CNI installation
+
+```
+# kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
+
+```
+
+Confirm master execution.
+
+```
+
+# kubectl get pods --all-namespaces
+NAMESPACE     NAME                                 READY   STATUS    RESTARTS   AGE
+kube-system   coredns-86c58d9df4-78jbg             1/1     Running   0          9m3s
+kube-system   coredns-86c58d9df4-q7mwf             1/1     Running   0          9m3s
+kube-system   etcd-k8s-master                      1/1     Running   0          13m
+kube-system   kube-apiserver-k8s-master            1/1     Running   0          13m
+kube-system   kube-controller-manager-k8s-master   1/1     Running   0          13m
+kube-system   kube-flannel-ds-amd64-zv8nc          1/1     Running   0          3m11s
+kube-system   kube-proxy-xj7hg                     1/1     Running   0          14m
+kube-system   kube-scheduler-k8s-master            1/1     Running   0          13m
+
+```
+
+5. Installing the node components.
+
+```
+# kubeadm join 172.16.1.100:6443 --token yrc47a.55b25p2dhe14pzd1 --discovery-token-ca-cert-hash sha256:2a7a31510b9a0b0da1cf71c2c29627b40711cdd84be12944a713ce2af2d5d148
+
+```
+
+```
+[root@k8s-master ~]# kubectl get nodes
+NAME         STATUS     ROLES    AGE   VERSION
+k8s-master   Ready      master   18m   v1.13.2
+k8s-node1    NotReady   <none>   30s   v1.13.2
+
+```
+
+```
+[root@k8s-master ~]# kubectl get nodes
+NAME         STATUS     ROLES    AGE     VERSION
+k8s-master   Ready      master   21m     v1.13.2
+k8s-node1    Ready      <none>   3m28s   v1.13.2
+k8s-node2    NotReady   <none>   15s     v1.13.2
+
+```
+
+You can check the cluster information by running the kubectl cluster-info command.
+
+```
+
+[root@k8s-master ~]# kubectl cluster-info
+Kubernetes master is running at https://172.16.1.100:6443
+KubeDNS is running at https://172.16.1.100:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+
+```
+
+6. Test the cluster
+
+```
+
+# kubectl run kubia --image=luksa/kubia --port 8080 --generator=run-pod/v1
+replicationcontroller/kubia created
+
+```
+
+This command runs a kernel pod on the cluster using the image of the locker (luksa / kubia). Note that the luksa / kubia image is a simple web server that responds to hostnames.
+
+```
+
+[root@k8s-master ~]# kubectl expose rc kubia --type=LoadBalancer --name kubia-http
+service/kubia-http exposed
+
+```
+
+Let's look at the service information generated by the kubectl get services command. In my test environment, the LoadBalancer type service uses 10.101.195.144 as the cluster IP.
+
+```
+[root@k8s-master ~]# kubectl get services
+NAME         TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+kubernetes   ClusterIP      10.96.0.1        <none>        443/TCP          3h22m
+kubia-http   LoadBalancer   10.101.195.144   <pending>     8080:31701/TCP   15s
+
+```
+
+Connect to the 8080 port using this cluster IP on the server where you installed the Coubertetis cluster. If the result is similar to the following, the cubenet is operating normally.
+
+```
+
+# curl 10.101.195.144:8080
+You've hit kubia-ckh8w
+
+```
+
 <h2>History</h2>
 
 Google Container Engine talk at Google Cloud Summit
