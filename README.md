@@ -16,7 +16,7 @@
 
 Kubernetes (commonly stylized as K8s is an open-source container-orchestration system for automating deployment, scaling and management of containerized applicationsIt was originally designed by Google and is now maintained by the Cloud Native Computing Foundation. It aims to provide a "platform for automating deployment, scaling, and operations of application containers across clusters of hosts".It works with a range of container tools, including Docker, since its first release
 
-<h2>Installation</h2>
+<h2>Install kubernetis using kubeadm on Centos 7</h2>
  
  
 1. Install the docker on the entire server.
@@ -109,7 +109,7 @@ Installing kubeadm:
 4. Installing the master component
 Initialize master node with kubeadm init command
 
-Initialize the master node using the kubeadm init command. The --pod-network-cidr option fits the CNI (Container Network Interface) to be used.
+Initialize the master node using the kubeadm init command. The --pod-network-cidr option fits the CNI (Container Network Interface) to  be used.
 
 ```
 
